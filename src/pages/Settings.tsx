@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSettings, useSaveSettings } from "../hooks/useTestGeneration";
 import type { AppSettings } from "../lib/types";
 
@@ -13,6 +13,7 @@ export function Settings() {
   });
   const [exclusionInput, setExclusionInput] = useState("");
   const [showSaved, setShowSaved] = useState(false);
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
     if (settings) {
@@ -20,6 +21,13 @@ export function Settings() {
       setExclusionInput(settings.scan_exclusions.join(", "));
     }
   }, [settings]);
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+    };
+  }, []);
 
   const handleSave = () => {
     const exclusions = exclusionInput
@@ -29,7 +37,8 @@ export function Settings() {
     saveSettings.mutate({ ...form, scan_exclusions: exclusions }, {
       onSuccess: () => {
         setShowSaved(true);
-        setTimeout(() => setShowSaved(false), 3000);
+        if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+        savedTimerRef.current = setTimeout(() => setShowSaved(false), 3000);
       },
     });
   };

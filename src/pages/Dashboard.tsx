@@ -22,7 +22,7 @@ export function Dashboard() {
       {isLoading && <p className="text-text-muted">Loading projects...</p>}
       {error && (
         <div className="rounded-lg bg-danger/10 border border-danger/30 p-3 text-sm text-danger">
-          {error instanceof Error ? error.message : "Failed to load projects"}
+          {String(error)}
         </div>
       )}
       {projects && <ProjectList projects={projects} />}

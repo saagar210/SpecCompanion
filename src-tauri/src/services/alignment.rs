@@ -112,10 +112,12 @@ pub fn generate_report(conn: &Connection, project_id: &str) -> Result<AlignmentR
         generated_at: Utc::now().to_rfc3339(),
     };
 
-    queries::insert_alignment_report(conn, &report)?;
+    let tx = conn.unchecked_transaction().map_err(AppError::Database)?;
+    queries::insert_alignment_report(&tx, &report)?;
     for mismatch in &mismatches {
-        queries::insert_mismatch(conn, mismatch)?;
+        queries::insert_mismatch(&tx, mismatch)?;
     }
+    tx.commit().map_err(AppError::Database)?;
 
     Ok(AlignmentReportWithMismatches { report, mismatches })
 }

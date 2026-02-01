@@ -83,13 +83,15 @@ pub async fn execute_tests(
         });
     }
 
-    // Batch insert all results under a single lock
+    // Batch insert all results under a single lock + transaction
     {
         let conn = state.conn.lock().map_err(|e| AppError::General(e.to_string()))?;
+        let tx = conn.unchecked_transaction().map_err(AppError::Database)?;
         for result in &results {
-            queries::insert_test_result(&conn, result)?;
+            queries::insert_test_result(&tx, result)?;
         }
-        let _ = queries::touch_project_updated_at(&conn, &project_id);
+        let _ = queries::touch_project_updated_at(&tx, &project_id);
+        tx.commit().map_err(AppError::Database)?;
     }
 
     let _ = app_handle.emit("test-progress", TestProgress {

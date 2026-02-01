@@ -49,7 +49,7 @@ export function RequirementsList({ requirements, selectable, selected, onToggle 
                   <input
                     type="checkbox"
                     checked={selected?.has(req.id) ?? false}
-                    onChange={() => onToggle?.(req.id)}
+                    readOnly
                     className="mt-1 accent-primary"
                   />
                 )}

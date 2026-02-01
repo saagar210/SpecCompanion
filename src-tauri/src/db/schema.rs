@@ -14,9 +14,11 @@ pub fn run_migrations(conn: &Connection) -> Result<(), rusqlite::Error> {
         .unwrap_or(0);
 
     if version < CURRENT_VERSION {
-        migrate_v1(conn)?;
-        conn.execute("DELETE FROM schema_version", [])?;
-        conn.execute("INSERT INTO schema_version (version) VALUES (?1)", [CURRENT_VERSION])?;
+        let tx = conn.unchecked_transaction()?;
+        migrate_v1(&tx)?;
+        tx.execute("DELETE FROM schema_version", [])?;
+        tx.execute("INSERT INTO schema_version (version) VALUES (?1)", [CURRENT_VERSION])?;
+        tx.commit()?;
     }
 
     Ok(())

@@ -96,12 +96,14 @@ pub async fn generate_tests(
         });
     }
 
-    // Batch insert all tests under a single lock
+    // Batch insert all tests under a single lock + transaction
     {
         let conn = state.conn.lock().map_err(|e| AppError::General(e.to_string()))?;
+        let tx = conn.unchecked_transaction().map_err(AppError::Database)?;
         for test in &generated_tests {
-            queries::insert_generated_test(&conn, test)?;
+            queries::insert_generated_test(&tx, test)?;
         }
+        tx.commit().map_err(AppError::Database)?;
     }
 
     Ok(generated_tests)
@@ -151,12 +153,20 @@ pub fn save_test_to_disk(
     } else {
         std::env::current_dir().map_err(AppError::Io)?.join(&path)
     };
+    // Validate path is within home directory BEFORE creating any directories
     if let Some(parent) = abs_path.parent() {
-        std::fs::create_dir_all(parent)?;
-        let canonical_parent = std::fs::canonicalize(parent).map_err(AppError::Io)?;
-        if !canonical_parent.starts_with(&home) {
+        // Walk up to find the deepest existing ancestor for validation
+        let mut check = parent.to_path_buf();
+        while !check.exists() {
+            if !check.pop() {
+                return Err(AppError::InvalidInput("Invalid path: no existing ancestor directory".into()));
+            }
+        }
+        let canonical_ancestor = std::fs::canonicalize(&check).map_err(AppError::Io)?;
+        if !canonical_ancestor.starts_with(&home) {
             return Err(AppError::InvalidInput("Access denied: path is outside home directory".into()));
         }
+        std::fs::create_dir_all(parent)?;
     }
 
     let conn = state.conn.lock().map_err(|e| AppError::General(e.to_string()))?;

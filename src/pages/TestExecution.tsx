@@ -62,7 +62,7 @@ export function TestExecution() {
       {(testsError || resultsError || executeTests.isError) && (
         <div className="rounded-lg border border-danger/30 bg-danger/5 p-4 text-sm text-danger mb-4">
           {executeTests.isError
-            ? `Execution failed: ${executeTests.error instanceof Error ? executeTests.error.message : "Unknown error"}`
+            ? `Execution failed: ${String(executeTests.error)}`
             : "Failed to load test data. Please try again."}
         </div>
       )}
@@ -106,7 +106,7 @@ export function TestExecution() {
                 <input
                   type="checkbox"
                   checked={selectedTests.has(test.id)}
-                  onChange={() => toggleTest(test.id)}
+                  readOnly
                   className="accent-primary"
                 />
                 <span className="text-sm text-text truncate flex-1">

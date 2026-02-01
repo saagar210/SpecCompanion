@@ -22,8 +22,12 @@ pub fn create_project(
             request.codebase_path
         )));
     }
+    // Store canonicalized path to prevent symlink/.. traversal issues downstream
+    let canonical = std::fs::canonicalize(path).map_err(AppError::Io)?;
+    let mut canonical_request = request;
+    canonical_request.codebase_path = canonical.to_string_lossy().to_string();
     let conn = state.conn.lock().map_err(|e| AppError::General(e.to_string()))?;
-    queries::create_project(&conn, &request)
+    queries::create_project(&conn, &canonical_request)
 }
 
 #[tauri::command]

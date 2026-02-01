@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Highlight, themes } from "prism-react-renderer";
 import type { Requirement, GeneratedTest } from "../../lib/types";
 import { RequirementsList } from "../spec/RequirementsList";
@@ -16,9 +16,12 @@ export function TestGenerationPanel({ projectId, requirements }: Props) {
   const [results, setResults] = useState<GeneratedTest[]>([]);
   const generateTests = useGenerateTests();
   const { data: settings } = useSettings();
+  const defaultsApplied = useRef(false);
 
+  // Only apply settings defaults once on initial load, not on background refetches
   useEffect(() => {
-    if (settings) {
+    if (settings && !defaultsApplied.current) {
+      defaultsApplied.current = true;
       if (settings.default_framework === "jest" || settings.default_framework === "pytest") {
         setFramework(settings.default_framework);
       }

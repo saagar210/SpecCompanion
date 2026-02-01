@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useCreateProject } from "../../hooks/useProjects";
 
@@ -18,6 +18,15 @@ export function CreateProjectDialog({ onClose }: Props) {
     }
   };
 
+  // Close on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !createProject.isPending) onClose();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onClose, createProject.isPending]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !codebasePath.trim()) return;
@@ -28,12 +37,12 @@ export function CreateProjectDialog({ onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => !createProject.isPending && onClose()}>
       <div className="bg-surface-alt border border-border rounded-xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
         <h3 className="text-lg font-semibold mb-4">New Project</h3>
         {createProject.isError && (
           <div className="rounded-lg border border-danger/30 bg-danger/5 p-3 text-sm text-danger mb-4">
-            {createProject.error instanceof Error ? createProject.error.message : "Failed to create project."}
+            {String(createProject.error)}
           </div>
         )}
         <form onSubmit={handleSubmit} className="space-y-4">

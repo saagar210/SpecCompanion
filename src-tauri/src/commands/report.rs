@@ -14,6 +14,7 @@ pub fn generate_alignment_report(
         return Err(AppError::InvalidInput("Project ID cannot be empty".into()));
     }
     let conn = state.conn.lock().map_err(|e| AppError::General(e.to_string()))?;
+    queries::get_project(&conn, &project_id)?;
     alignment::generate_report(&conn, &project_id)
 }
 
@@ -104,8 +105,8 @@ th { background: #252538; }
                     html.push_str(&format!(
                         "<tr><td>{}</td><td><span class=\"badge {}\">{}</span></td><td>{}</td></tr>",
                         html_escape(&m.spec_section),
-                        m.mismatch_type,
-                        m.mismatch_type.replace('_', " "),
+                        html_escape(&m.mismatch_type),
+                        html_escape(&m.mismatch_type.replace('_', " ")),
                         html_escape(&m.details),
                     ));
                 }
@@ -120,7 +121,7 @@ th { background: #252538; }
 }
 
 fn escape_csv(s: &str) -> String {
-    if s.contains(',') || s.contains('"') || s.contains('\n') {
+    if s.contains(',') || s.contains('"') || s.contains('\n') || s.contains('\r') {
         format!("\"{}\"", s.replace('"', "\"\""))
     } else {
         s.to_string()

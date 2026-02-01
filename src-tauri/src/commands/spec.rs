@@ -122,6 +122,14 @@ pub fn read_file_content(path: String) -> Result<String, AppError> {
     if !canonical.starts_with(&home) {
         return Err(AppError::InvalidInput("Access denied: path is outside home directory".into()));
     }
+    let metadata = std::fs::metadata(&canonical).map_err(AppError::Io)?;
+    const MAX_FILE_SIZE: u64 = 50 * 1024 * 1024; // 50 MB
+    if metadata.len() > MAX_FILE_SIZE {
+        return Err(AppError::InvalidInput(format!(
+            "File too large ({:.1} MB). Maximum allowed size is 50 MB.",
+            metadata.len() as f64 / (1024.0 * 1024.0)
+        )));
+    }
     std::fs::read_to_string(&canonical).map_err(AppError::Io)
 }
 

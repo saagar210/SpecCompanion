@@ -47,8 +47,8 @@ export function AlignmentChart({ mismatches, totalRequirements, coveredRequireme
             }}
           />
           <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-            {data.map((entry, index) => (
-              <Cell key={index} fill={entry.color} />
+            {data.map((entry) => (
+              <Cell key={entry.name} fill={entry.color} />
             ))}
           </Bar>
         </BarChart>

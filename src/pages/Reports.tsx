@@ -77,7 +77,7 @@ export function Reports() {
 
       {(reportsError || generateReport.isError) && (
         <div className="rounded-lg border border-danger/30 bg-danger/5 p-4 text-sm text-danger mb-4">
-          {generateReport.isError ? "Failed to generate report." : "Failed to load reports."}
+          {generateReport.isError ? `Failed to generate report: ${String(generateReport.error)}` : `Failed to load reports.`}
         </div>
       )}
 

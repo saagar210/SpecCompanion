@@ -54,6 +54,13 @@ fn walk_dir(
             walk_dir(&path, root, symbols, exclusions, depth + 1)?;
         } else if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
             if SOURCE_EXTENSIONS.contains(&ext) {
+                // Skip files larger than 1 MB to avoid reading generated/bundled files
+                let too_large = std::fs::metadata(&path)
+                    .map(|m| m.len() > 1_024_000)
+                    .unwrap_or(false);
+                if too_large {
+                    continue;
+                }
                 if let Ok(content) = std::fs::read_to_string(&path) {
                     let rel_path = path.strip_prefix(root).unwrap_or(&path).to_string_lossy().to_string();
                     extract_symbols(&content, &rel_path, ext, symbols);
