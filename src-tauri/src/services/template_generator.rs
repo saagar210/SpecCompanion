@@ -76,7 +76,7 @@ fn find_relevant_symbols<'a>(description: &str, symbols: &'a [CodeSymbol]) -> Ve
     symbols.iter()
         .filter(|sym| {
             let lower_name = sym.name.to_lowercase();
-            words.iter().any(|word| lower_name.contains(word) || word.contains(&lower_name.as_str()))
+            words.iter().any(|word| lower_name.contains(word) || word.contains(lower_name.as_str()))
         })
         .take(5)
         .collect()
@@ -84,16 +84,15 @@ fn find_relevant_symbols<'a>(description: &str, symbols: &'a [CodeSymbol]) -> Ve
 
 fn make_test_description(desc: &str) -> String {
     let lower = desc.to_lowercase();
-    if lower.starts_with("the system shall ") {
-        lower[17..].to_string()
-    } else if lower.starts_with("the system must ") {
-        lower[16..].to_string()
+    if let Some(rest) = lower.strip_prefix("the system shall ") {
+        rest.to_string()
+    } else if let Some(rest) = lower.strip_prefix("the system must ") {
+        rest.to_string()
     } else if lower.starts_with("as a ") {
-        // "As a user, I want to X" -> "allow X"
         if let Some(idx) = lower.find("i want to ") {
-            format!("allow {}", &lower[idx + 10..])
+            format!("allow {}", &lower[idx + "i want to ".len()..])
         } else if let Some(idx) = lower.find("i should be able to ") {
-            format!("allow {}", &lower[idx + 20..])
+            format!("allow {}", &lower[idx + "i should be able to ".len()..])
         } else {
             lower
         }

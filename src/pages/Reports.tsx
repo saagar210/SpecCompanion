@@ -14,7 +14,7 @@ import { MismatchTable } from "../components/report/MismatchTable";
 export function Reports() {
   const { projectId } = useParams<{ projectId: string }>();
   const { data: project } = useProject(projectId);
-  const { data: reports } = useReports(projectId);
+  const { data: reports, isError: reportsError } = useReports(projectId);
   const generateReport = useGenerateAlignmentReport(projectId ?? "");
   const exportReport = useExportReport();
   const [selectedReportId, setSelectedReportId] = useState<string | undefined>();
@@ -74,6 +74,12 @@ export function Reports() {
           </button>
         </div>
       </div>
+
+      {(reportsError || generateReport.isError) && (
+        <div className="rounded-lg border border-danger/30 bg-danger/5 p-4 text-sm text-danger mb-4">
+          {generateReport.isError ? "Failed to generate report." : "Failed to load reports."}
+        </div>
+      )}
 
       {/* Report selector */}
       {reports && reports.length > 1 && (

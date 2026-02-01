@@ -8,11 +8,12 @@ import { RequirementsList } from "../components/spec/RequirementsList";
 export function SpecView() {
   const { projectId, specId } = useParams<{ projectId: string; specId: string }>();
   const { data: project } = useProject(projectId);
-  const { data: parsed, isLoading } = useSpec(specId);
+  const { data: parsed, isLoading, isError } = useSpec(specId);
   const reparse = useReparseSpec();
   const [tab, setTab] = useState<"requirements" | "source">("requirements");
 
   if (isLoading) return <p className="text-text-muted">Loading...</p>;
+  if (isError) return <p className="text-danger">Failed to load spec. It may have been deleted.</p>;
   if (!parsed) return <p className="text-text-muted">Spec not found.</p>;
 
   return (

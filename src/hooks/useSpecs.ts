@@ -46,6 +46,9 @@ export function useReparseSpec() {
     mutationFn: (id: string) => api.reparseSpec(id),
     onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: ["spec", id] });
+      queryClient.invalidateQueries({ queryKey: ["generated-tests"] });
+      queryClient.invalidateQueries({ queryKey: ["all-generated-tests"] });
+      queryClient.invalidateQueries({ queryKey: ["reports"] });
     },
   });
 }

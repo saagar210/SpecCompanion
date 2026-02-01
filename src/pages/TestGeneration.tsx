@@ -7,7 +7,7 @@ import { TestGenerationPanel } from "../components/test/TestGenerationPanel";
 export function TestGeneration() {
   const { projectId } = useParams<{ projectId: string }>();
   const { data: project } = useProject(projectId);
-  const { data: specs } = useSpecs(projectId);
+  const { data: specs, isError: specsError } = useSpecs(projectId);
   const [selectedSpecId, setSelectedSpecId] = useState<string | undefined>();
   const { data: parsed } = useSpec(selectedSpecId);
 
@@ -43,6 +43,12 @@ export function TestGeneration() {
               <option key={s.id} value={s.id}>{s.filename}</option>
             ))}
           </select>
+        </div>
+      )}
+
+      {specsError && (
+        <div className="rounded-lg border border-danger/30 bg-danger/5 p-4 text-sm text-danger mb-4">
+          Failed to load specifications.
         </div>
       )}
 

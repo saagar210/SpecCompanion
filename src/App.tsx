@@ -21,7 +21,7 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
-    <ErrorBoundary>
+    <ErrorBoundary queryClient={queryClient}>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>

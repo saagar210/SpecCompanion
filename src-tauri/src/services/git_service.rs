@@ -26,7 +26,12 @@ pub fn get_repo_info(path: &str) -> Result<RepoInfo, AppError> {
         .to_string();
 
     let commit = head.peel_to_commit()?;
-    let commit_hash = commit.id().to_string()[..8].to_string();
+    let commit_hash_full = commit.id().to_string();
+    let commit_hash = if commit_hash_full.len() >= 8 {
+        commit_hash_full[..8].to_string()
+    } else {
+        commit_hash_full
+    };
     let commit_message = commit
         .message()
         .unwrap_or("")

@@ -3,6 +3,7 @@ mod db;
 mod errors;
 mod models;
 mod services;
+mod utils;
 
 use db::Database;
 use tauri::Manager;
@@ -40,6 +41,7 @@ pub fn run() {
             // Test Generation
             commands::test_gen::generate_tests,
             commands::test_gen::get_generated_tests,
+            commands::test_gen::get_all_generated_tests,
             commands::test_gen::save_test_to_disk,
             commands::test_gen::save_settings,
             commands::test_gen::load_settings,

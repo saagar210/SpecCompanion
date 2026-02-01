@@ -32,7 +32,7 @@ pub fn upload_spec(
 
     queries::get_project(&conn, &project_id)?;
 
-    let tx = conn.unchecked_transaction().map_err(|e| AppError::Database(e))?;
+    let tx = conn.unchecked_transaction().map_err(AppError::Database)?;
 
     let spec = queries::create_spec(&tx, &project_id, &safe_filename, &content)?;
     let requirements = spec_parser::parse_spec(&spec.id, &content);
@@ -42,9 +42,10 @@ pub fn upload_spec(
     }
 
     queries::update_spec_parsed_at(&tx, &spec.id)?;
+    queries::touch_project_updated_at(&tx, &project_id)?;
     let updated_spec = queries::get_spec(&tx, &spec.id)?;
 
-    tx.commit().map_err(|e| AppError::Database(e))?;
+    tx.commit().map_err(AppError::Database)?;
 
     Ok(ParsedSpec {
         spec: updated_spec,
@@ -78,7 +79,10 @@ pub fn delete_spec(state: State<'_, Database>, id: String) -> Result<(), AppErro
         return Err(AppError::InvalidInput("Spec ID cannot be empty".into()));
     }
     let conn = state.conn.lock().map_err(|e| AppError::General(e.to_string()))?;
-    queries::delete_spec(&conn, &id)
+    let spec = queries::get_spec(&conn, &id)?;
+    queries::delete_spec(&conn, &id)?;
+    let _ = queries::touch_project_updated_at(&conn, &spec.project_id);
+    Ok(())
 }
 
 #[tauri::command]
@@ -89,7 +93,7 @@ pub fn reparse_spec(state: State<'_, Database>, id: String) -> Result<Vec<Requir
     let conn = state.conn.lock().map_err(|e| AppError::General(e.to_string()))?;
     let spec = queries::get_spec(&conn, &id)?;
 
-    let tx = conn.unchecked_transaction().map_err(|e| AppError::Database(e))?;
+    let tx = conn.unchecked_transaction().map_err(AppError::Database)?;
 
     queries::delete_requirements_for_spec(&tx, &id)?;
 
@@ -101,7 +105,7 @@ pub fn reparse_spec(state: State<'_, Database>, id: String) -> Result<Vec<Requir
 
     queries::update_spec_parsed_at(&tx, &id)?;
 
-    tx.commit().map_err(|e| AppError::Database(e))?;
+    tx.commit().map_err(AppError::Database)?;
 
     Ok(requirements)
 }
@@ -113,7 +117,7 @@ pub fn read_file_content(path: String) -> Result<String, AppError> {
     }
     let canonical = std::fs::canonicalize(&path).map_err(AppError::Io)?;
     // Block paths outside user home directory
-    let home = dirs_next_home()
+    let home = crate::utils::home_dir()
         .ok_or_else(|| AppError::General("Cannot determine home directory".into()))?;
     if !canonical.starts_with(&home) {
         return Err(AppError::InvalidInput("Access denied: path is outside home directory".into()));
@@ -121,16 +125,3 @@ pub fn read_file_content(path: String) -> Result<String, AppError> {
     std::fs::read_to_string(&canonical).map_err(AppError::Io)
 }
 
-fn dirs_next_home() -> Option<std::path::PathBuf> {
-    #[cfg(target_os = "macos")]
-    {
-        std::env::var("HOME").ok().map(std::path::PathBuf::from)
-    }
-    #[cfg(not(target_os = "macos"))]
-    {
-        std::env::var("HOME")
-            .or_else(|_| std::env::var("USERPROFILE"))
-            .ok()
-            .map(std::path::PathBuf::from)
-    }
-}

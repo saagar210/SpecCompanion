@@ -13,8 +13,8 @@ export function CreateProjectDialog({ onClose }: Props) {
 
   const handleSelectFolder = async () => {
     const selected = await open({ directory: true, multiple: false });
-    if (selected) {
-      setCodebasePath(selected as string);
+    if (selected && typeof selected === "string") {
+      setCodebasePath(selected);
     }
   };
 
@@ -28,9 +28,14 @@ export function CreateProjectDialog({ onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-surface-alt border border-border rounded-xl p-6 w-full max-w-md">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-surface-alt border border-border rounded-xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
         <h3 className="text-lg font-semibold mb-4">New Project</h3>
+        {createProject.isError && (
+          <div className="rounded-lg border border-danger/30 bg-danger/5 p-3 text-sm text-danger mb-4">
+            {createProject.error instanceof Error ? createProject.error.message : "Failed to create project."}
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm text-text-muted mb-1">Project Name</label>

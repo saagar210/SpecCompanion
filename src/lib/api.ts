@@ -56,6 +56,9 @@ export const generateTests = (req: GenerateTestsRequest) =>
 export const getGeneratedTests = (requirementId: string) =>
   invoke<GeneratedTest[]>("get_generated_tests", { requirement_id: requirementId });
 
+export const getAllGeneratedTests = (projectId: string) =>
+  invoke<GeneratedTest[]>("get_all_generated_tests", { project_id: projectId });
+
 export const saveTestToDisk = (testId: string, path: string) =>
   invoke<string>("save_test_to_disk", { test_id: testId, path });
 

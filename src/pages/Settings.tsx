@@ -12,6 +12,7 @@ export function Settings() {
     scan_exclusions: [],
   });
   const [exclusionInput, setExclusionInput] = useState("");
+  const [showSaved, setShowSaved] = useState(false);
 
   useEffect(() => {
     if (settings) {
@@ -25,7 +26,12 @@ export function Settings() {
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
-    saveSettings.mutate({ ...form, scan_exclusions: exclusions });
+    saveSettings.mutate({ ...form, scan_exclusions: exclusions }, {
+      onSuccess: () => {
+        setShowSaved(true);
+        setTimeout(() => setShowSaved(false), 3000);
+      },
+    });
   };
 
   if (isLoading) return <p className="text-text-muted">Loading settings...</p>;
@@ -94,8 +100,11 @@ export function Settings() {
           {saveSettings.isPending ? "Saving..." : "Save Settings"}
         </button>
 
-        {saveSettings.isSuccess && (
+        {showSaved && (
           <p className="text-sm text-success">Settings saved.</p>
+        )}
+        {saveSettings.isError && (
+          <p className="text-sm text-danger">Failed to save settings.</p>
         )}
       </div>
     </div>

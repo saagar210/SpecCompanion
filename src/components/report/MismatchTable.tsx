@@ -7,7 +7,7 @@ interface Props {
 const typeBadge: Record<string, { bg: string; label: string }> = {
   no_test_generated: { bg: "bg-warning/20 text-warning", label: "No Test" },
   test_failing: { bg: "bg-danger/20 text-danger", label: "Failing" },
-  not_implemented: { bg: "bg-primary/20 text-primary-light", label: "Not Run" },
+  not_implemented: { bg: "bg-primary/20 text-primary-light", label: "Not Implemented" },
   partial_coverage: { bg: "bg-warning/20 text-warning", label: "Partial" },
 };
 

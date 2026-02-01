@@ -38,7 +38,7 @@ pub async fn generate_test_with_llm(
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(60))
         .build()
-        .map_err(|e| AppError::Http(e))?;
+        .map_err(AppError::Http)?;
     let request = ClaudeRequest {
         model: "claude-sonnet-4-20250514".to_string(),
         max_tokens: 2048,

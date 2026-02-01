@@ -8,10 +8,11 @@ export function ProjectView() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
   const { data: project, isLoading } = useProject(projectId);
-  const { data: specs } = useSpecs(projectId);
+  const { data: specs, isError: specsError } = useSpecs(projectId);
   const deleteProject = useDeleteProject();
   const deleteSpec = useDeleteSpec(projectId ?? "");
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmDeleteSpecId, setConfirmDeleteSpecId] = useState<string | null>(null);
 
   if (isLoading) return <p className="text-text-muted">Loading...</p>;
   if (!project) return <p className="text-text-muted">Project not found.</p>;
@@ -103,6 +104,12 @@ export function ProjectView() {
       </div>
 
       {/* Specs */}
+      {(specsError || deleteSpec.isError) && (
+        <div className="rounded-lg border border-danger/30 bg-danger/5 p-4 text-sm text-danger mb-4">
+          {deleteSpec.isError ? "Failed to delete spec." : "Failed to load specifications."}
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold">Specifications</h3>
         <SpecUploader projectId={projectId!} />
@@ -125,12 +132,30 @@ export function ProjectView() {
                 <span className="text-xs text-text-muted">
                   {spec.parsed_at ? "Parsed" : "Not parsed"}
                 </span>
-                <button
-                  onClick={() => deleteSpec.mutate(spec.id)}
-                  className="text-xs text-danger hover:text-danger/80 transition-colors"
-                >
-                  Delete
-                </button>
+                {confirmDeleteSpecId === spec.id ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-danger">Delete?</span>
+                    <button
+                      onClick={() => { deleteSpec.mutate(spec.id); setConfirmDeleteSpecId(null); }}
+                      className="text-xs text-danger font-medium hover:text-danger/80 transition-colors"
+                    >
+                      Yes
+                    </button>
+                    <button
+                      onClick={() => setConfirmDeleteSpecId(null)}
+                      className="text-xs text-text-muted hover:text-text transition-colors"
+                    >
+                      No
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setConfirmDeleteSpecId(spec.id)}
+                    className="text-xs text-danger hover:text-danger/80 transition-colors"
+                  >
+                    Delete
+                  </button>
+                )}
               </div>
             </div>
           ))}

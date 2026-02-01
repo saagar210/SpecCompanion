@@ -1,8 +1,10 @@
 import { Component } from "react";
 import type { ErrorInfo, ReactNode } from "react";
+import { QueryClient } from "@tanstack/react-query";
 
 interface Props {
   children: ReactNode;
+  queryClient?: QueryClient;
 }
 
 interface State {
@@ -24,6 +26,13 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error("Uncaught error:", error, errorInfo);
   }
 
+  handleReset = () => {
+    if (this.props.queryClient) {
+      this.props.queryClient.clear();
+    }
+    this.setState({ hasError: false, error: null });
+  };
+
   render() {
     if (this.state.hasError) {
       return (
@@ -34,7 +43,7 @@ export class ErrorBoundary extends Component<Props, State> {
               {this.state.error?.message ?? "An unexpected error occurred."}
             </p>
             <button
-              onClick={() => this.setState({ hasError: false, error: null })}
+              onClick={this.handleReset}
               className="px-4 py-2 bg-primary hover:bg-primary-dark text-white text-sm rounded-lg transition-colors"
             >
               Try Again

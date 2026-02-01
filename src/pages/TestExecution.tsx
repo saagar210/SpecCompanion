@@ -2,38 +2,21 @@ import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useProject } from "../hooks/useProjects";
 import { useTestResults, useExecuteTests } from "../hooks/useTestExecution";
-import { useSpecs } from "../hooks/useSpecs";
 import { TestResultsTable } from "../components/test/TestResultsTable";
 import { ExecutionProgress } from "../components/test/ExecutionProgress";
-import type { GeneratedTest } from "../lib/types";
-import { getGeneratedTests, getSpec } from "../lib/api";
+import { getAllGeneratedTests } from "../lib/api";
 import { useQuery } from "@tanstack/react-query";
 
 export function TestExecution() {
   const { projectId } = useParams<{ projectId: string }>();
   const { data: project } = useProject(projectId);
-  const { data: results, refetch: refetchResults } = useTestResults(projectId);
+  const { data: results, isError: resultsError } = useTestResults(projectId);
   const executeTests = useExecuteTests(projectId ?? "");
-  const { data: specs } = useSpecs(projectId);
 
-  // Gather all generated tests across all specs/requirements
-  const { data: allTests } = useQuery({
+  const { data: allTests, isLoading: testsLoading, isError: testsError } = useQuery({
     queryKey: ["all-generated-tests", projectId],
-    queryFn: async () => {
-      if (!specs) return [];
-      const tests: GeneratedTest[] = [];
-      for (const spec of specs) {
-        // We need to get requirements for each spec, then tests for each requirement
-        // For simplicity, use the spec endpoint which returns requirements
-        const parsed = await getSpec(spec.id);
-        for (const req of parsed.requirements) {
-          const reqTests = await getGeneratedTests(req.id);
-          tests.push(...reqTests);
-        }
-      }
-      return tests;
-    },
-    enabled: !!specs && specs.length > 0,
+    queryFn: () => getAllGeneratedTests(projectId!),
+    enabled: !!projectId,
   });
 
   const [selectedTests, setSelectedTests] = useState<Set<string>>(new Set());
@@ -58,11 +41,7 @@ export function TestExecution() {
 
   const handleExecute = () => {
     const ids = Array.from(selectedTests);
-    executeTests.mutate(ids, {
-      onSuccess: () => {
-        refetchResults();
-      },
-    });
+    executeTests.mutate(ids);
   };
 
   return (
@@ -79,6 +58,18 @@ export function TestExecution() {
       <h2 className="text-2xl font-bold mb-6">Test Execution</h2>
 
       <ExecutionProgress />
+
+      {(testsError || resultsError || executeTests.isError) && (
+        <div className="rounded-lg border border-danger/30 bg-danger/5 p-4 text-sm text-danger mb-4">
+          {executeTests.isError
+            ? `Execution failed: ${executeTests.error instanceof Error ? executeTests.error.message : "Unknown error"}`
+            : "Failed to load test data. Please try again."}
+        </div>
+      )}
+
+      {testsLoading && (
+        <p className="text-text-muted mb-4">Loading generated tests...</p>
+      )}
 
       {/* Test selection */}
       {allTests && allTests.length > 0 && (

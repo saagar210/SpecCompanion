@@ -89,6 +89,7 @@ pub async fn execute_tests(
         for result in &results {
             queries::insert_test_result(&conn, result)?;
         }
+        let _ = queries::touch_project_updated_at(&conn, &project_id);
     }
 
     let _ = app_handle.emit("test-progress", TestProgress {

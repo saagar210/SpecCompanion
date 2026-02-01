@@ -83,6 +83,7 @@ fn is_requirement_like_section(section: &str) -> bool {
 
 fn looks_like_requirement(text: &str) -> bool {
     let lower = text.to_lowercase();
+    // Explicit requirement patterns
     lower.starts_with("as a ")
         || lower.starts_with("the system shall ")
         || lower.starts_with("the system must ")
@@ -92,7 +93,8 @@ fn looks_like_requirement(text: &str) -> bool {
         || lower.starts_with("must ")
         || lower.contains("**shall**")
         || lower.contains("**must**")
-        || text.starts_with("**")
+        // Bold text only counts if it contains enough words to be a real requirement
+        || (text.starts_with("**") && text.contains(' ') && lower.split_whitespace().count() >= 5)
 }
 
 fn classify_requirement_type(section: &str, text: &str) -> String {

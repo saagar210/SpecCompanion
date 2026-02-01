@@ -87,6 +87,15 @@ pub fn delete_project(conn: &Connection, id: &str) -> Result<(), AppError> {
     Ok(())
 }
 
+pub fn touch_project_updated_at(conn: &Connection, project_id: &str) -> Result<(), AppError> {
+    let now = Utc::now().to_rfc3339();
+    conn.execute(
+        "UPDATE projects SET updated_at = ?1 WHERE id = ?2",
+        params![now, project_id],
+    )?;
+    Ok(())
+}
+
 // ─── Specs ──────────────────────────────────────────────────────
 
 pub fn create_spec(conn: &Connection, project_id: &str, filename: &str, content: &str) -> Result<Spec, AppError> {
@@ -299,7 +308,6 @@ pub fn update_generated_test_path(conn: &Connection, id: &str, path: &str) -> Re
     Ok(())
 }
 
-#[allow(dead_code)]
 pub fn get_generated_tests_for_project(conn: &Connection, project_id: &str) -> Result<Vec<GeneratedTest>, AppError> {
     let mut stmt = conn.prepare(
         "SELECT gt.id, gt.requirement_id, gt.framework, gt.code, gt.generation_mode, gt.file_path, gt.created_at

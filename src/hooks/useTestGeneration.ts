@@ -16,6 +16,7 @@ export function useGenerateTests() {
     mutationFn: (req: GenerateTestsRequest) => api.generateTests(req),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["generated-tests"] });
+      queryClient.invalidateQueries({ queryKey: ["all-generated-tests"] });
     },
   });
 }
