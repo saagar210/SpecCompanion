@@ -65,10 +65,10 @@ pub fn export_report(
             for m in &report.mismatches {
                 csv.push_str(&format!(
                     "{},{},{},{},{}\n",
-                    m.requirement_id,
+                    escape_csv(&m.requirement_id),
                     escape_csv(&m.spec_section),
-                    m.mismatch_type,
-                    m.code_element.as_deref().unwrap_or(""),
+                    escape_csv(&m.mismatch_type),
+                    escape_csv(m.code_element.as_deref().unwrap_or("")),
                     escape_csv(&m.details),
                 ));
             }

@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Highlight, themes } from "prism-react-renderer";
 import type { Requirement, GeneratedTest } from "../../lib/types";
 import { RequirementsList } from "../spec/RequirementsList";
-import { useGenerateTests } from "../../hooks/useTestGeneration";
+import { useGenerateTests, useSettings } from "../../hooks/useTestGeneration";
 
 interface Props {
   projectId: string;
@@ -15,6 +15,18 @@ export function TestGenerationPanel({ projectId, requirements }: Props) {
   const [mode, setMode] = useState<"template" | "llm">("template");
   const [results, setResults] = useState<GeneratedTest[]>([]);
   const generateTests = useGenerateTests();
+  const { data: settings } = useSettings();
+
+  useEffect(() => {
+    if (settings) {
+      if (settings.default_framework === "jest" || settings.default_framework === "pytest") {
+        setFramework(settings.default_framework);
+      }
+      if (settings.default_mode === "template" || settings.default_mode === "llm") {
+        setMode(settings.default_mode);
+      }
+    }
+  }, [settings]);
 
   const toggleRequirement = (id: string) => {
     setSelected((prev) => {

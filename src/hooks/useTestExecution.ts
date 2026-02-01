@@ -23,6 +23,9 @@ export function useExecuteTests(projectId: string) {
     mutationFn: (testIds: string[]) => api.executeTests(projectId, testIds),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["test-results", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["reports", projectId] });
     },
   });
 }

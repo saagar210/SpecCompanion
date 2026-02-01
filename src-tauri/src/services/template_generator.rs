@@ -19,7 +19,7 @@ pub fn generate_jest_test(requirement: &Requirement, symbols: &[CodeSymbol]) -> 
     }
 
     code.push_str(&format!("describe('{}', () => {{\n", escape_js_string(section)));
-    code.push_str(&format!("  it('should {}', () => {{\n", make_test_description(desc)));
+    code.push_str(&format!("  it('should {}', () => {{\n", escape_js_string(&make_test_description(desc))));
 
     if let Some(assertion) = generate_assertion_hint(desc) {
         code.push_str(&format!("    // TODO: {}\n", assertion));
@@ -56,7 +56,7 @@ pub fn generate_pytest_test(requirement: &Requirement, symbols: &[CodeSymbol]) -
     let test_name = make_python_test_name(desc);
     code.push_str(&format!("class Test{}:\n", make_class_name(section)));
     code.push_str(&format!("    def {}(self):\n", test_name));
-    code.push_str(&format!("        \"\"\"Test: {}\"\"\"\n", desc));
+    code.push_str(&format!("        \"\"\"Test: {}\"\"\"\n", desc.replace("\"\"\"", "\\\"\\\"\\\"")));
     code.push_str("        # Arrange\n");
     code.push_str("        \n");
     code.push_str("        # Act\n");
@@ -130,7 +130,10 @@ fn make_class_name(section: &str) -> String {
 }
 
 fn escape_js_string(s: &str) -> String {
-    s.replace('\'', "\\'")
+    s.replace('\\', "\\\\")
+        .replace('\'', "\\'")
+        .replace('\n', "\\n")
+        .replace('\r', "\\r")
 }
 
 fn generate_assertion_hint(desc: &str) -> Option<String> {

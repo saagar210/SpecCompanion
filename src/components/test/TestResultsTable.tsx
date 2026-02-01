@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import type { TestResult } from "../../lib/types";
 
 interface Props {
@@ -39,9 +39,8 @@ export function TestResultsTable({ results }: Props) {
         </thead>
         <tbody>
           {results.map((result) => (
-            <>
+            <Fragment key={result.id}>
               <tr
-                key={result.id}
                 className="border-b border-border hover:bg-surface-hover cursor-pointer"
                 onClick={() => setExpanded(expanded === result.id ? null : result.id)}
               >
@@ -83,7 +82,7 @@ export function TestResultsTable({ results }: Props) {
                   </td>
                 </tr>
               )}
-            </>
+            </Fragment>
           ))}
         </tbody>
       </table>

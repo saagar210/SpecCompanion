@@ -25,22 +25,26 @@ pub fn upload_spec(
     let safe_filename = std::path::Path::new(&filename)
         .file_name()
         .and_then(|n| n.to_str())
-        .unwrap_or(&filename)
+        .unwrap_or("unnamed_spec.md")
         .to_string();
 
     let conn = state.conn.lock().map_err(|e| AppError::General(e.to_string()))?;
 
     queries::get_project(&conn, &project_id)?;
 
-    let spec = queries::create_spec(&conn, &project_id, &safe_filename, &content)?;
+    let tx = conn.unchecked_transaction().map_err(|e| AppError::Database(e))?;
+
+    let spec = queries::create_spec(&tx, &project_id, &safe_filename, &content)?;
     let requirements = spec_parser::parse_spec(&spec.id, &content);
 
     if !requirements.is_empty() {
-        queries::insert_requirements(&conn, &requirements)?;
+        queries::insert_requirements(&tx, &requirements)?;
     }
 
-    queries::update_spec_parsed_at(&conn, &spec.id)?;
-    let updated_spec = queries::get_spec(&conn, &spec.id)?;
+    queries::update_spec_parsed_at(&tx, &spec.id)?;
+    let updated_spec = queries::get_spec(&tx, &spec.id)?;
+
+    tx.commit().map_err(|e| AppError::Database(e))?;
 
     Ok(ParsedSpec {
         spec: updated_spec,
@@ -85,15 +89,19 @@ pub fn reparse_spec(state: State<'_, Database>, id: String) -> Result<Vec<Requir
     let conn = state.conn.lock().map_err(|e| AppError::General(e.to_string()))?;
     let spec = queries::get_spec(&conn, &id)?;
 
-    queries::delete_requirements_for_spec(&conn, &id)?;
+    let tx = conn.unchecked_transaction().map_err(|e| AppError::Database(e))?;
+
+    queries::delete_requirements_for_spec(&tx, &id)?;
 
     let requirements = spec_parser::parse_spec(&id, &spec.content);
 
     if !requirements.is_empty() {
-        queries::insert_requirements(&conn, &requirements)?;
+        queries::insert_requirements(&tx, &requirements)?;
     }
 
-    queries::update_spec_parsed_at(&conn, &id)?;
+    queries::update_spec_parsed_at(&tx, &id)?;
+
+    tx.commit().map_err(|e| AppError::Database(e))?;
 
     Ok(requirements)
 }
@@ -105,10 +113,10 @@ pub fn read_file_content(path: String) -> Result<String, AppError> {
     }
     let canonical = std::fs::canonicalize(&path).map_err(AppError::Io)?;
     // Block paths outside user home directory
-    if let Some(home) = dirs_next_home() {
-        if !canonical.starts_with(&home) {
-            return Err(AppError::InvalidInput("Access denied: path is outside home directory".into()));
-        }
+    let home = dirs_next_home()
+        .ok_or_else(|| AppError::General("Cannot determine home directory".into()))?;
+    if !canonical.starts_with(&home) {
+        return Err(AppError::InvalidInput("Access denied: path is outside home directory".into()));
     }
     std::fs::read_to_string(&canonical).map_err(AppError::Io)
 }

@@ -64,7 +64,9 @@ export function Reports() {
         <h2 className="text-2xl font-bold">Alignment Reports</h2>
         <div className="flex gap-2">
           <button
-            onClick={() => generateReport.mutate()}
+            onClick={() => generateReport.mutate(undefined, {
+              onSuccess: (data) => setSelectedReportId(data.id),
+            })}
             disabled={generateReport.isPending}
             className="px-4 py-2 bg-primary hover:bg-primary-dark text-white text-sm rounded-lg transition-colors disabled:opacity-50"
           >

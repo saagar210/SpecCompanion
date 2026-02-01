@@ -131,6 +131,23 @@ pub fn save_test_to_disk(
     if path.trim().is_empty() {
         return Err(AppError::InvalidInput("File path cannot be empty".into()));
     }
+    // Validate path is within user home directory
+    let home = home_dir()
+        .ok_or_else(|| AppError::General("Cannot determine home directory".into()))?;
+    let abs_path = if std::path::Path::new(&path).is_absolute() {
+        std::path::PathBuf::from(&path)
+    } else {
+        std::env::current_dir().map_err(AppError::Io)?.join(&path)
+    };
+    if let Some(parent) = abs_path.parent() {
+        let _ = std::fs::create_dir_all(parent);
+        if let Ok(canonical_parent) = std::fs::canonicalize(parent) {
+            if !canonical_parent.starts_with(&home) {
+                return Err(AppError::InvalidInput("Access denied: path is outside home directory".into()));
+            }
+        }
+    }
+
     let conn = state.conn.lock().map_err(|e| AppError::General(e.to_string()))?;
     let test = queries::get_generated_test(&conn, &test_id)?;
 
@@ -166,6 +183,13 @@ pub fn save_settings(app_handle: AppHandle, settings: AppSettings) -> Result<(),
 #[tauri::command]
 pub fn load_settings(app_handle: AppHandle) -> Result<AppSettings, AppError> {
     load_settings_internal(&app_handle)
+}
+
+fn home_dir() -> Option<std::path::PathBuf> {
+    std::env::var("HOME")
+        .or_else(|_| std::env::var("USERPROFILE"))
+        .ok()
+        .map(std::path::PathBuf::from)
 }
 
 fn load_settings_internal(app_handle: &AppHandle) -> Result<AppSettings, AppError> {

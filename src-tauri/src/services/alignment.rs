@@ -73,16 +73,6 @@ pub fn generate_report(conn: &Connection, project_id: &str) -> Result<AlignmentR
             });
         } else if has_passing && !has_failing {
             covered += 1;
-        } else if has_failing {
-            mismatches.push(Mismatch {
-                id: Uuid::new_v4().to_string(),
-                report_id: report_id.clone(),
-                requirement_id: req.id.clone(),
-                spec_section: req.section.clone(),
-                code_element: None,
-                mismatch_type: "test_failing".to_string(),
-                details: format!("Test(s) failing for: {}", req.description),
-            });
         } else if has_passing && has_failing {
             covered += 1;
             mismatches.push(Mismatch {
@@ -93,6 +83,16 @@ pub fn generate_report(conn: &Connection, project_id: &str) -> Result<AlignmentR
                 code_element: None,
                 mismatch_type: "partial_coverage".to_string(),
                 details: format!("Some tests passing, some failing for: {}", req.description),
+            });
+        } else if has_failing {
+            mismatches.push(Mismatch {
+                id: Uuid::new_v4().to_string(),
+                report_id: report_id.clone(),
+                requirement_id: req.id.clone(),
+                spec_section: req.section.clone(),
+                code_element: None,
+                mismatch_type: "test_failing".to_string(),
+                details: format!("Test(s) failing for: {}", req.description),
             });
         }
     }

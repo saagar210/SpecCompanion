@@ -91,11 +91,12 @@ pub fn run_pytest_test(test_file: &str, working_dir: &str) -> Result<ExecutionRe
 
 fn find_python() -> String {
     // Try python3 first, fall back to python
-    if Command::new("python3").arg("--version").output().is_ok() {
-        "python3".to_string()
-    } else {
-        "python".to_string()
+    if let Ok(output) = Command::new("python3").arg("--version").output() {
+        if output.status.success() {
+            return "python3".to_string();
+        }
     }
+    "python".to_string()
 }
 
 #[allow(dead_code)]

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AppLayout } from "./components/layout/AppLayout";
 import { ErrorBoundary } from "./components/layout/ErrorBoundary";
@@ -33,6 +33,13 @@ function App() {
             <Route path="/project/:projectId/generate" element={<TestGeneration />} />
             <Route path="/project/:projectId/execute" element={<TestExecution />} />
             <Route path="/project/:projectId/reports" element={<Reports />} />
+            <Route path="*" element={
+              <div className="text-center py-16">
+                <h2 className="text-2xl font-bold mb-2">Page Not Found</h2>
+                <p className="text-text-muted mb-4">The page you're looking for doesn't exist.</p>
+                <Link to="/" className="text-primary-light hover:underline">Back to Dashboard</Link>
+              </div>
+            } />
           </Route>
         </Routes>
       </BrowserRouter>
