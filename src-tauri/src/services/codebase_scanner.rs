@@ -76,6 +76,10 @@ fn extract_symbols(content: &str, file_path: &str, ext: &str, symbols: &mut Vec<
         "ts" | "tsx" | "js" | "jsx" => extract_js_ts_symbols(content, file_path, symbols),
         "py" => extract_python_symbols(content, file_path, symbols),
         "rs" => extract_rust_symbols(content, file_path, symbols),
+        "go" => extract_go_symbols(content, file_path, symbols),
+        "java" => extract_java_symbols(content, file_path, symbols),
+        "rb" => extract_ruby_symbols(content, file_path, symbols),
+        "cs" => extract_csharp_symbols(content, file_path, symbols),
         _ => {}
     }
 }
@@ -142,6 +146,106 @@ fn extract_rust_symbols(content: &str, file_path: &str, symbols: &mut Vec<CodeSy
     }
 }
 
+fn extract_go_symbols(content: &str, file_path: &str, symbols: &mut Vec<CodeSymbol>) {
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if let Some(name) = extract_after_keyword(trimmed, "func ") {
+            symbols.push(CodeSymbol { name, kind: "function".into(), file_path: file_path.into() });
+        }
+        if let Some(name) = extract_after_keyword(trimmed, "type ") {
+            if trimmed.contains(" struct") || trimmed.contains(" interface") {
+                symbols.push(CodeSymbol { name, kind: "class".into(), file_path: file_path.into() });
+            }
+        }
+    }
+}
+
+fn extract_java_symbols(content: &str, file_path: &str, symbols: &mut Vec<CodeSymbol>) {
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if let Some(name) = extract_after_keyword(trimmed, "class ") {
+            symbols.push(CodeSymbol { name, kind: "class".into(), file_path: file_path.into() });
+        }
+        if let Some(name) = extract_after_keyword(trimmed, "interface ") {
+            symbols.push(CodeSymbol { name, kind: "class".into(), file_path: file_path.into() });
+        }
+        if looks_like_java_method(trimmed) {
+            if let Some(name) = extract_method_name_before_paren(trimmed) {
+                symbols.push(CodeSymbol { name, kind: "method".into(), file_path: file_path.into() });
+            }
+        }
+    }
+}
+
+fn extract_ruby_symbols(content: &str, file_path: &str, symbols: &mut Vec<CodeSymbol>) {
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if let Some(name) = extract_after_keyword(trimmed, "class ") {
+            symbols.push(CodeSymbol { name, kind: "class".into(), file_path: file_path.into() });
+        }
+        if let Some(rest) = trimmed.strip_prefix("def ") {
+            let method = rest.trim_start();
+            let name_part = method.split_whitespace().next().unwrap_or("");
+            let name_part = name_part.split('(').next().unwrap_or("");
+            let name = name_part.rsplit('.').next().unwrap_or("").to_string();
+            if !name.is_empty() {
+                symbols.push(CodeSymbol { name, kind: "method".into(), file_path: file_path.into() });
+            }
+        }
+    }
+}
+
+fn extract_csharp_symbols(content: &str, file_path: &str, symbols: &mut Vec<CodeSymbol>) {
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if let Some(name) = extract_after_keyword(trimmed, "class ") {
+            symbols.push(CodeSymbol { name, kind: "class".into(), file_path: file_path.into() });
+        }
+        if let Some(name) = extract_after_keyword(trimmed, "interface ") {
+            symbols.push(CodeSymbol { name, kind: "class".into(), file_path: file_path.into() });
+        }
+        if looks_like_csharp_method(trimmed) {
+            if let Some(name) = extract_method_name_before_paren(trimmed) {
+                symbols.push(CodeSymbol { name, kind: "method".into(), file_path: file_path.into() });
+            }
+        }
+    }
+}
+
+fn looks_like_java_method(line: &str) -> bool {
+    line.contains('(')
+        && line.contains(')')
+        && (line.ends_with('{') || line.ends_with(";") || line.contains(" throws "))
+        && !line.contains(" class ")
+        && !line.starts_with("if ")
+        && !line.starts_with("for ")
+        && !line.starts_with("while ")
+        && !line.starts_with("switch ")
+}
+
+fn looks_like_csharp_method(line: &str) -> bool {
+    line.contains('(')
+        && line.contains(')')
+        && (line.ends_with('{') || line.ends_with("=>") || line.contains(" => "))
+        && !line.contains(" class ")
+        && !line.starts_with("if ")
+        && !line.starts_with("for ")
+        && !line.starts_with("while ")
+        && !line.starts_with("switch ")
+}
+
+fn extract_method_name_before_paren(line: &str) -> Option<String> {
+    let paren = line.find('(')?;
+    let before = line[..paren].trim();
+    let candidate = before.split_whitespace().last()?;
+    let cleaned = candidate.trim_matches(|c: char| c == '<' || c == '>' || c == ':' || c == ',');
+    if cleaned.is_empty() {
+        None
+    } else {
+        Some(cleaned.to_string())
+    }
+}
+
 fn extract_after_keyword(line: &str, keyword: &str) -> Option<String> {
     if let Some(rest) = line.strip_prefix(keyword)
         .or_else(|| {
@@ -158,4 +262,49 @@ fn extract_after_keyword(line: &str, keyword: &str) -> Option<String> {
         }
     }
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn extracts_symbols_for_supported_non_rust_languages() {
+        let go = r#"
+            package demo
+            type User struct {}
+            func BuildUser() {}
+        "#;
+        let java = r#"
+            public class AccountService {
+                public void createAccount(String id) {}
+            }
+        "#;
+        let ruby = r#"
+            class AccountService
+              def self.build
+              end
+            end
+        "#;
+        let csharp = r#"
+            public class BillingService {
+                public void ChargeCustomer(string id) { }
+            }
+        "#;
+
+        let mut symbols = Vec::new();
+        extract_symbols(go, "main.go", "go", &mut symbols);
+        extract_symbols(java, "Main.java", "java", &mut symbols);
+        extract_symbols(ruby, "main.rb", "rb", &mut symbols);
+        extract_symbols(csharp, "Main.cs", "cs", &mut symbols);
+
+        let names: Vec<&str> = symbols.iter().map(|s| s.name.as_str()).collect();
+        assert!(names.contains(&"User"));
+        assert!(names.contains(&"BuildUser"));
+        assert!(names.contains(&"AccountService"));
+        assert!(names.contains(&"createAccount"));
+        assert!(names.contains(&"build"));
+        assert!(names.contains(&"BillingService"));
+        assert!(names.contains(&"ChargeCustomer"));
+    }
 }
