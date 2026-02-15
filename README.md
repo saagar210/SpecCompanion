@@ -1,5 +1,10 @@
 # Spec Companion
 
+[![CI](https://github.com/saagar210/SpecCompanion/workflows/CI/badge.svg)](https://github.com/saagar210/SpecCompanion/actions/workflows/ci.yml)
+[![Security Scanning](https://github.com/saagar210/SpecCompanion/workflows/Security%20Scanning/badge.svg)](https://github.com/saagar210/SpecCompanion/actions/workflows/security.yml)
+[![Release](https://github.com/saagar210/SpecCompanion/workflows/Release/badge.svg)](https://github.com/saagar210/SpecCompanion/actions/workflows/release.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A desktop app that verifies your code actually implements what your spec says it should. Upload a markdown spec, generate tests from requirements, run them against your codebase, and get alignment reports showing exactly where coverage gaps exist.
 
 Built with Tauri v2 (Rust backend, React frontend). Runs locally, works offline, keeps your code and specs private.
@@ -133,6 +138,58 @@ Open **Settings** in the app to configure:
 | Charts | Recharts |
 | Code highlighting | prism-react-renderer |
 | Markdown rendering | react-markdown |
+
+## CI/CD & Releases
+
+This project uses GitHub Actions for continuous integration, security scanning, and automated releases:
+
+- **CI Pipeline** (`.github/workflows/ci.yml`)
+  - Runs on every push and PR to main/develop
+  - Multi-platform testing (Linux, macOS, Windows)
+  - Rust tests, Clippy linting, and formatting checks
+  - Frontend TypeScript type checking, ESLint, and Jest tests
+  - Build verification on all platforms
+
+- **Security Scanning** (`.github/workflows/security.yml`)
+  - Weekly scheduled scans + on-demand
+  - Cargo audit for Rust dependencies
+  - NPM audit for frontend dependencies
+  - CodeQL analysis for security vulnerabilities
+  - Semgrep SAST scanning
+  - Trivy filesystem vulnerability scanning
+  - Dependency review on PRs
+
+- **Release Automation** (`.github/workflows/release.yml`)
+  - Triggered by version tags (`v*.*.*`) or manual dispatch
+  - Cross-platform builds:
+    - macOS: `.dmg` (Apple Silicon + Intel)
+    - Windows: `.msi` + `.exe` (NSIS installer)
+    - Linux: `.deb` + `.AppImage`
+  - Automatic GitHub Release creation with installers
+  - Optional code signing (configure secrets for production)
+
+- **Dependency Management** (`.github/dependabot.yml`)
+  - Automated weekly dependency updates
+  - Separate groups for NPM, Cargo, and GitHub Actions
+  - Security vulnerability alerts
+
+### Creating a Release
+
+1. Update version in `src-tauri/Cargo.toml` and `package.json`
+2. Update `CHANGELOG.md` with release notes
+3. Create and push a version tag:
+   ```bash
+   git tag v1.0.0
+   git push origin v1.0.0
+   ```
+4. GitHub Actions will automatically build and create a draft release
+5. Review the draft release and publish when ready
+
+## Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+For security vulnerabilities, please see [SECURITY.md](SECURITY.md).
 
 ## License
 

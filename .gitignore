@@ -25,3 +25,15 @@ coverage
 *.njsproj
 *.sln
 *.sw?
+
+# Tauri build artifacts
+src-tauri/target
+
+# Release artifacts
+*.dmg
+*.app
+*.msi
+*.exe
+*.deb
+*.AppImage
+*.rpm
