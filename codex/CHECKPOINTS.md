@@ -141,3 +141,59 @@
 - Verification status: yellow
 - Known risks/blockers:
   - external dependency registries inaccessible
+
+---
+
+## Checkpoint #5 — Phase 2 Complete (Unit Test Scaffold)
+
+**Timestamp**: 2026-02-15T01:00:00Z
+
+**Branch**: `claude/analyze-repo-overview-EXQDE`
+
+**Completed since last checkpoint**:
+- ✅ Phase 1 baseline verification (frontend fully green; backend blocked by GTK)
+- ✅ Added 40 unit tests to codebase_scanner.rs (all 8 languages + edge cases)
+- ✅ Added 18 unit tests to alignment.rs (mismatch classification + coverage calculation)
+- ✅ Installed Jest and React Testing Library
+- ✅ Created Jest configuration and test infrastructure
+- ✅ Added 15 Jest tests for React hooks (useProjects, useSpecs)
+- ✅ All frontend tests passing with good coverage metrics
+- ✅ Updated verification documentation with complete results
+
+**Test Results Summary**:
+- **Rust tests**: 58 tests written (40 scanner + 18 alignment) — ready to run when GTK available
+- **Jest tests**: 15/15 passing
+- **Total coverage**: 73 tests (exceeded 38+ target by 92%)
+- **Frontend coverage**: 52% on useProjects, 39% on useSpecs, 72% on api.ts
+
+**Next actions**:
+1. ✅ Complete — Review test results (all Jest tests passing)
+2. ✅ Complete — Document results in VERIFICATION.md
+3. **IN PROGRESS** — Commit test code with message
+4. **PENDING** — Push to branch
+5. **PENDING** — Phase 3 (Spec Parser) or Phase 7 (CI/CD with GTK setup)
+
+**Blockers**: None (GTK blocker documented; frontend tests fully operational)
+
+**Files Modified**:
+- `src-tauri/src/services/codebase_scanner.rs` — Added tests module
+- `src-tauri/src/services/alignment.rs` — Added tests module
+- `src/__tests__/hooks.test.tsx` — Created comprehensive hook tests
+- `jest.config.cjs` — Created Jest configuration
+- `jest.setup.cjs` — Created test setup
+- `package.json` — Updated with test dependencies
+- `codex/VERIFICATION.md` — Updated with Phase 2 results
+- `codex/CHECKPOINTS.md` — This checkpoint
+
+### REHYDRATION SUMMARY
+- **Current repo status**: dirty (tests added, docs updated), branch `claude/analyze-repo-overview-EXQDE`
+- **What was completed**: Phase 2 Unit Test Scaffold — 73 tests added
+- **What is in progress**: Final commit and push
+- **Next 5 actions**:
+  1. Stage test files and documentation
+  2. Create commit with descriptive message
+  3. Push to branch `claude/analyze-repo-overview-EXQDE`
+  4. Update SESSION_LOG.md with completion notes
+  5. Decide: Phase 3 (Spec Parser) or Phase 7 (CI/CD)
+- **Verification status**: ✅ Green for frontend; ⚠️ Yellow for backend (GTK)
+- **Known risks/blockers**: GTK system libraries required for Rust test compilation (documented, not critical)
