@@ -70,19 +70,33 @@ pub async fn generate_tests(
     let mut generated_tests = Vec::new();
 
     for req in &requirements {
-        let code = match request.mode.as_str() {
+        let (code, actual_mode) = match request.mode.as_str() {
             "llm" => {
-                llm_generator::generate_test_with_llm(
+                // Try LLM first, fall back to template on error
+                match llm_generator::generate_test_with_llm(
                     &settings.api_key,
                     req,
                     &request.framework,
                     &symbols,
-                ).await?
+                ).await {
+                    Ok(test_code) => (test_code, "llm".to_string()),
+                    Err(e) => {
+                        eprintln!("LLM generation failed for requirement {}: {}. Falling back to template mode.", req.id, e);
+                        let template_code = match request.framework.as_str() {
+                            "pytest" => template_generator::generate_pytest_test(req, &symbols),
+                            _ => template_generator::generate_jest_test(req, &symbols),
+                        };
+                        (template_code, "template".to_string())
+                    }
+                }
             }
-            _ => match request.framework.as_str() {
-                "pytest" => template_generator::generate_pytest_test(req, &symbols),
-                _ => template_generator::generate_jest_test(req, &symbols),
-            },
+            _ => {
+                let template_code = match request.framework.as_str() {
+                    "pytest" => template_generator::generate_pytest_test(req, &symbols),
+                    _ => template_generator::generate_jest_test(req, &symbols),
+                };
+                (template_code, request.mode.clone())
+            }
         };
 
         generated_tests.push(GeneratedTest {
@@ -90,7 +104,7 @@ pub async fn generate_tests(
             requirement_id: req.id.clone(),
             framework: request.framework.clone(),
             code,
-            generation_mode: request.mode.clone(),
+            generation_mode: actual_mode,
             file_path: None,
             created_at: Utc::now().to_rfc3339(),
         });
