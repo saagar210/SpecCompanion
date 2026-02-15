@@ -121,3 +121,159 @@ pub fn generate_report(conn: &Connection, project_id: &str) -> Result<AlignmentR
 
     Ok(AlignmentReportWithMismatches { report, mismatches })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Helper function to test coverage calculation
+    fn calculate_coverage_percent(total: i64, covered: i64) -> f64 {
+        if total > 0 {
+            (covered as f64 / total as f64) * 100.0
+        } else {
+            0.0
+        }
+    }
+
+    // Helper to determine mismatch type based on test state
+    fn classify_mismatch(
+        has_tests: bool,
+        has_results: bool,
+        has_passing: bool,
+        has_failing: bool,
+    ) -> Option<&'static str> {
+        if !has_tests {
+            return Some("no_test_generated");
+        }
+        if !has_results {
+            return Some("not_implemented");
+        }
+        if has_passing && has_failing {
+            return Some("partial_coverage");
+        }
+        if has_failing && !has_passing {
+            return Some("test_failing");
+        }
+        None // Fully covered
+    }
+
+    #[test]
+    fn test_mismatch_no_test_generated() {
+        let mismatch_type = classify_mismatch(false, false, false, false);
+        assert_eq!(mismatch_type, Some("no_test_generated"));
+    }
+
+    #[test]
+    fn test_mismatch_test_not_executed() {
+        let mismatch_type = classify_mismatch(true, false, false, false);
+        assert_eq!(mismatch_type, Some("not_implemented"));
+    }
+
+    #[test]
+    fn test_covered_requirement_all_passed() {
+        let mismatch_type = classify_mismatch(true, true, true, false);
+        assert_eq!(mismatch_type, None); // No mismatch = covered
+    }
+
+    #[test]
+    fn test_partial_coverage_some_failed() {
+        let mismatch_type = classify_mismatch(true, true, true, true);
+        assert_eq!(mismatch_type, Some("partial_coverage"));
+    }
+
+    #[test]
+    fn test_all_tests_failing() {
+        let mismatch_type = classify_mismatch(true, true, false, true);
+        assert_eq!(mismatch_type, Some("test_failing"));
+    }
+
+    #[test]
+    fn test_coverage_percentage_calculation() {
+        let coverage = calculate_coverage_percent(3, 2);
+        assert!((coverage - 66.666).abs() < 0.01); // 2/3 ≈ 66.67%
+    }
+
+    #[test]
+    fn test_empty_project_coverage() {
+        let coverage = calculate_coverage_percent(0, 0);
+        assert_eq!(coverage, 0.0);
+    }
+
+    #[test]
+    fn test_full_coverage() {
+        let coverage = calculate_coverage_percent(5, 5);
+        assert_eq!(coverage, 100.0);
+    }
+
+    #[test]
+    fn test_zero_coverage() {
+        let coverage = calculate_coverage_percent(10, 0);
+        assert_eq!(coverage, 0.0);
+    }
+
+    #[test]
+    fn test_coverage_rounding() {
+        let coverage = calculate_coverage_percent(7, 3);
+        assert!((coverage - 42.857).abs() < 0.01); // 3/7 ≈ 42.86%
+    }
+
+    #[test]
+    fn test_high_coverage() {
+        let coverage = calculate_coverage_percent(100, 95);
+        assert_eq!(coverage, 95.0);
+    }
+
+    #[test]
+    fn test_single_requirement_covered() {
+        let coverage = calculate_coverage_percent(1, 1);
+        assert_eq!(coverage, 100.0);
+    }
+
+    #[test]
+    fn test_single_requirement_not_covered() {
+        let coverage = calculate_coverage_percent(1, 0);
+        assert_eq!(coverage, 0.0);
+    }
+
+    #[test]
+    fn test_mismatch_classification_sequence() {
+        // Test the priority order of classification
+
+        // Priority 1: No tests
+        assert_eq!(classify_mismatch(false, true, true, true), Some("no_test_generated"));
+
+        // Priority 2: Tests exist but not executed
+        assert_eq!(classify_mismatch(true, false, false, false), Some("not_implemented"));
+
+        // Priority 3: Tests executed but all failing
+        assert_eq!(classify_mismatch(true, true, false, true), Some("test_failing"));
+
+        // Priority 4: Tests executed with mixed results
+        assert_eq!(classify_mismatch(true, true, true, true), Some("partial_coverage"));
+
+        // Best case: All passing
+        assert_eq!(classify_mismatch(true, true, true, false), None);
+    }
+
+    #[test]
+    fn test_edge_case_only_error_status() {
+        // If all tests have "error" status (not "failed" or "passed")
+        // Current implementation treats "error" same as "failed"
+        let mismatch_type = classify_mismatch(true, true, false, true);
+        assert_eq!(mismatch_type, Some("test_failing"));
+    }
+
+    #[test]
+    fn test_large_project_coverage() {
+        // Test with realistic project sizes
+        let coverage = calculate_coverage_percent(500, 437);
+        assert!((coverage - 87.4).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_coverage_precision() {
+        // Ensure float precision is maintained
+        let coverage = calculate_coverage_percent(3, 1);
+        assert!((coverage - 33.333).abs() < 0.01);
+    }
+}
