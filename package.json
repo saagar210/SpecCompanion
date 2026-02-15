@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "clean": "rm -rf dist node_modules src-tauri/target src-tauri/gen/schemas && find . -name '.DS_Store' -type f -delete || true"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.20",
