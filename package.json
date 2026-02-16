@@ -5,10 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:lean": "./scripts/lean-dev.sh",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "clean": "rm -rf dist node_modules src-tauri/target src-tauri/gen/schemas && find . -name '.DS_Store' -type f -delete || true"
+    "clean:heavy": "rm -rf dist src-tauri/target src-tauri/gen/schemas node_modules/.vite",
+    "clean:full": "rm -rf dist node_modules src-tauri/target src-tauri/gen/schemas node_modules/.vite .vite && find . -name '.DS_Store' -type f -delete || true",
+    "clean": "pnpm run clean:full"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.20",
